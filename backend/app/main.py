@@ -246,7 +246,8 @@ def _serialize_plant(db: Session, plant: Plant) -> Dict[str, object]:
         if diagnosis
         else None,
         "check_in_count": len(check_ins),
-from app.models.models import Base
+    }
+    from app.models.models import Base
 from app.database import engine
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
