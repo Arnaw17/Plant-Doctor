@@ -266,6 +266,21 @@ def _startup() -> None:
             "check_ins",
             "reminders",
         ):
+@app.on_event("startup")
+def _startup() -> None:
+    # Create all database tables if they don't exist
+    Base.metadata.create_all(bind=engine)
+
+    # Reset sequences safely
+    with engine.begin() as connection:
+        for table_name in (
+            "users",
+            "plants",
+            "diagnoses",
+            "photos",
+            "check_ins",
+            "reminders",
+        ):
             try:
                 connection.execute(
                     text(
@@ -279,6 +294,7 @@ def _startup() -> None:
                     )
                 )
             except ProgrammingError:
+                # Ignore if the table or sequence does not exist yet
                 pass
 
     start_reminder_scheduler()
