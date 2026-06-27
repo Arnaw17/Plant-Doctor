@@ -247,26 +247,11 @@ def _serialize_plant(db: Session, plant: Plant) -> Dict[str, object]:
         else None,
         "check_in_count": len(check_ins),
     }
-    from app.models.models import Base
+from app.models.models import Base
 from app.database import engine
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 
-@app.on_event("startup")
-def _startup() -> None:
-    # Create all tables first
-    Base.metadata.create_all(bind=engine)
-
-    # Reset sequences only if the tables exist
-    with engine.begin() as connection:
-        for table_name in (
-            "users",
-            "plants",
-            "diagnoses",
-            "photos",
-            "check_ins",
-            "reminders",
-        ):
 @app.on_event("startup")
 def _startup() -> None:
     # Create all database tables if they don't exist
