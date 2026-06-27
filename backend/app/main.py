@@ -246,22 +246,43 @@ def _serialize_plant(db: Session, plant: Plant) -> Dict[str, object]:
         if diagnosis
         else None,
         "check_in_count": len(check_ins),
-    }
-
+from app.models.models import Base
+from app.database import engine
+from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 
 @app.on_event("startup")
 def _startup() -> None:
-  with engine.begin() as connection:
-    for table_name in ("users", "plants", "diagnoses", "photos", "check_ins", "reminders"):
-      connection.execute(
-        text(
-          f"SELECT setval(pg_get_serial_sequence('{table_name}', 'id'), "
-          f"COALESCE((SELECT MAX(id) FROM {table_name}), 1), "
-          f"(SELECT MAX(id) IS NOT NULL FROM {table_name}))"
-        )
-      )
-  start_reminder_scheduler()
-  scan_due_care_reminders()
+    # Create all tables first
+    Base.metadata.create_all(bind=engine)
+
+    # Reset sequences only if the tables exist
+    with engine.begin() as connection:
+        for table_name in (
+            "users",
+            "plants",
+            "diagnoses",
+            "photos",
+            "check_ins",
+            "reminders",
+        ):
+            try:
+                connection.execute(
+                    text(
+                        f"""
+                        SELECT setval(
+                            pg_get_serial_sequence('{table_name}', 'id'),
+                            COALESCE((SELECT MAX(id) FROM {table_name}), 1),
+                            (SELECT MAX(id) IS NOT NULL FROM {table_name})
+                        )
+                        """
+                    )
+                )
+            except ProgrammingError:
+                pass
+
+    start_reminder_scheduler()
+    scan_due_care_reminders()
 
 
 @app.on_event("shutdown")
